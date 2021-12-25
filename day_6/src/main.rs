@@ -66,7 +66,7 @@ fn progress_fish_timer(fish: &u8) -> u8 {
 // region part_two_internals
 fn get_initial_counts(input: &Vec<u8>) -> HashMap<u8, u128> {
     let mut counter: HashMap<u8, u128> = HashMap::new();
-    input.iter().for_each(|age| *counter.entry(*age).or_insert(0) += 1);
+    input.iter().for_each(|&age| *counter.entry(age).or_insert(0) += 1);
     counter
 }
 
