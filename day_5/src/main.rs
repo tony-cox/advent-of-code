@@ -87,8 +87,7 @@ fn points_from_input_line(input: &str, count_diagonals: bool) -> Vec<Point> {
     } else if start.is_vertically_aligned(&end) {
         vertical_points(start, end)
     } else if count_diagonals {
-        let points = diagonal_points(start, end);
-        points
+        diagonal_points(start, end)
     } else {
         Vec::new()
     }
@@ -96,10 +95,7 @@ fn points_from_input_line(input: &str, count_diagonals: bool) -> Vec<Point> {
 
 fn count_and_print(points: Vec<Point>) {
     let mut counter: HashMap<&Point, u16> = HashMap::new();
-    for point in points.iter() {
-        let entry_counter = counter.entry(point).or_insert(0);
-        *entry_counter += 1;
-    }
+    points.iter().for_each(|point| *counter.entry(point).or_insert(0) += 1);
     let res = counter.values().filter(|count| **count > 1).count();
     println!("Result: {}", res);
 }
