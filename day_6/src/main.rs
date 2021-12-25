@@ -1,6 +1,6 @@
+use std::collections::HashMap;
 use std::fs;
 use std::iter;
-use std::collections::HashMap;
 
 const INPUT_FILE_NAME: &str = "input";
 
@@ -14,12 +14,12 @@ fn get_input() -> Vec<u8> {
     fs::read_to_string(INPUT_FILE_NAME)
         .unwrap()
         .lines()
-        .next().unwrap()
+        .next()
+        .unwrap()
         .split(",")
         .map(|x| x.parse::<u8>().unwrap())
         .collect()
 }
-
 
 fn part_one(input: &Vec<u8>) {
     let mut school = input.clone();
@@ -28,7 +28,6 @@ fn part_one(input: &Vec<u8>) {
     age_school(&mut school, 80);
     println!("After 80 days: {}", school.len());
 }
-
 
 fn part_two(input: &Vec<u8>) {
     let mut school = get_initial_counts(input);
@@ -54,7 +53,6 @@ fn age_school(school: &mut Vec<u8>, num_days: u16) {
     }
 }
 
-
 fn progress_fish_timer(fish: &u8) -> u8 {
     match fish {
         0 => 6,
@@ -66,14 +64,20 @@ fn progress_fish_timer(fish: &u8) -> u8 {
 // region part_two_internals
 fn get_initial_counts(input: &Vec<u8>) -> HashMap<u8, u128> {
     let mut counter: HashMap<u8, u128> = HashMap::new();
-    input.iter().for_each(|&age| *counter.entry(age).or_insert(0) += 1);
+    input
+        .iter()
+        .for_each(|&age| *counter.entry(age).or_insert(0) += 1);
     counter
 }
 
 fn age_aggregated_counts(school: &mut HashMap<u8, u128>, num_days: u16) {
-    println!("Num days remaining: {}. Num fish: {}", num_days, count_aggregated_fish(school));
+    println!(
+        "Num days remaining: {}. Num fish: {}",
+        num_days,
+        count_aggregated_fish(school)
+    );
     if num_days > 0 {
-        let num_new_fish =  *school.entry(0).or_insert(0);
+        let num_new_fish = *school.entry(0).or_insert(0);
         // age all fish of ages 1 to 8 to be ages 0 to 7 respectively
         (1..=8).for_each(|fish_age| {
             let num_fish_in_age = *school.entry(fish_age).or_insert(0);
