@@ -55,15 +55,7 @@ fn get_all_output_digits(input: &Vec<String>) -> Vec<Digit> {
 
 fn get_output_value_for_line(line: &String) -> u64 {
     let input_digits = get_input_digits_for_line(line);
-    let mut known_digits: HashMap<u8, &Digit> = HashMap::new();
-    for digit in input_digits.iter().cycle() {
-        if known_digits.len() == 10 {
-            break;
-        }
-        if let Some(value) = digit.get_value(&known_digits) {
-            known_digits.insert(value, digit);
-        }
-    }
+    let known_digits = solve_digit_values(&input_digits);
     let output_digits = get_output_digits_for_line(line);
     let output_value: u64 = output_digits
         .iter()
@@ -72,6 +64,19 @@ fn get_output_value_for_line(line: &String) -> u64 {
         .parse::<u64>()
         .unwrap();
     output_value
+}
+
+fn solve_digit_values(digits: &Vec<Digit>) -> HashMap<u8, &Digit> {
+    let mut known_digits: HashMap<u8, &Digit> = HashMap::new();
+    for digit in digits.iter().cycle() {
+        if known_digits.len() == 10 {
+            break;
+        }
+        if let Some(value) = digit.get_value(&known_digits) {
+            known_digits.insert(value, digit);
+        }
+    }
+    known_digits
 }
 
 fn get_input_digits_for_line(line: &String) -> Vec<Digit> {
@@ -126,7 +131,7 @@ impl Digit {
     }
 
     fn get_value(&self, known_digits: &HashMap<u8, &Digit>) -> Option<u8> {
-        if let Some((&key, value)) = known_digits.iter().find(|(key, &val)| val == self) {
+        if let Some((&key, _value)) = known_digits.iter().find(|(_key, &val)| val == self) {
             Some(key) // already known, shortcut out
         } else if let Some(value) = self.a_priori_value() {
             Some(value)
