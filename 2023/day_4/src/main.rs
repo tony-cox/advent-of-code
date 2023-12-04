@@ -43,16 +43,21 @@ fn part2(game_results: &Vec<usize>) -> usize {
     game_results
         .iter()
         .enumerate()
-        .fold(0, |acc, (i, game_result)| {
+        .fold(0, |acc, (i, _game_result)| {
             // the +1 here is just so we count the original scratchie as well as the copies it generates
-            acc + 1 + get_num_copies(*game_result, i, &game_results)
+            acc + 1 + get_num_copies(i, &game_results)
         })
 }
 
-fn get_num_copies(game_result: usize, game_index: usize, all_games: &Vec<usize>) -> usize {
+fn get_num_copies(game_index: usize, all_games: &Vec<usize>) -> usize {
+    let game_result = all_games[game_index];
     // recursively gets all copies for a given scratchie - may be finding copies of copies, etc
     (game_index + 1..game_index + game_result + 1).fold(game_result, |acc, x| {
-        acc + get_num_copies(all_games[x], x, all_games)
+        if x >= all_games.len() {
+            // we don't copy scratchies that don't exist
+            return acc;
+        }
+        acc + get_num_copies(x, all_games)
     })
 }
 
