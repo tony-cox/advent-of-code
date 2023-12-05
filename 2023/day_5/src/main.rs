@@ -1,36 +1,57 @@
-use std::collections::HashSet;
 use std::fs;
-
+use std::time::Instant;
 const INPUT_FILE_NAME: &str = "input.txt";
 
 struct ConciseOffsetMap {
     source_start: i64,
-    destination_start: i64,
-    range_length: usize,
     offset: i64,
     source_end: i64,
-    destination_end: i64,
 }
 
 fn main() {
     let (seeds, maps_by_type) = get_data();
-    part_1(&seeds, &maps_by_type)
+    println!("Part 1");
+    part_1(&seeds, &maps_by_type);
+    println!("Part 2");
+    let start = Instant::now();
+    let part_2_seeds = split_seeds_into_ranges_for_part_2(&seeds);
+    println!("Number of seeds to map: {}", part_2_seeds.len());
+    part_1(&part_2_seeds, &maps_by_type);
+    println!("Elapsed seconds: {}", start.elapsed().as_secs());
 }
 
+fn split_seeds_into_ranges_for_part_2(seeds: &Vec<i64>) -> Vec<i64> {
+    // first split seed vector into pairs of tuples of seeds with range
+    let pairs: Vec<(i64, i64)> = seeds.chunks(2).map(|chunk| (chunk[0], chunk[1])).collect();
+    pairs
+        .iter()
+        .flat_map(|(start_seed, range)| (*start_seed..=*start_seed + *range))
+        .collect()
+}
 fn find_map_for_source(source: i64, maps: &Vec<ConciseOffsetMap>) -> Option<&ConciseOffsetMap> {
-    for map in maps {
-        if map.source_in_range(source) {
-            return Some(map);
+    let found_map_idx_res = maps.binary_search_by(|map| {
+        if source < map.source_start {
+            // this map is too big, i.e. greater than the source
+            std::cmp::Ordering::Greater
+        } else if source >= map.source_end {
+            // this map is too small, i.e. less than the source
+            std::cmp::Ordering::Less
+        } else {
+            // map found
+            std::cmp::Ordering::Equal
         }
+    });
+    if let Ok(found_map_idx) = found_map_idx_res {
+        Some(&maps[found_map_idx])
+    } else {
+        None
     }
-    None
 }
 
 fn get_destination_for_source(source: i64, maps: &Vec<ConciseOffsetMap>) -> i64 {
     if let Some(map) = find_map_for_source(source, maps) {
-        map.get_destination(source).unwrap()
+        map.get_destination(source)
     } else {
-        // Any source numbers that aren't mapped correspond to the same destination number
         source
     }
 }
@@ -40,15 +61,13 @@ fn get_location_for_seed(seed: &i64, maps_by_type: &Vec<Vec<ConciseOffsetMap>>) 
     for map_type in maps_by_type {
         source = get_destination_for_source(source, map_type);
     }
-    // print out the seed and final destination
-    println!("{} -> {}", seed, source);
     source
 }
 
 fn part_1(seeds: &Vec<i64>, maps_by_type: &Vec<Vec<ConciseOffsetMap>>) {
     let min_location = seeds
         .iter()
-        .map(|x| get_location_for_seed(x, maps_by_type))
+        .map(|seed| get_location_for_seed(seed, maps_by_type))
         .min()
         .unwrap();
     println!("Min Location: {}", min_location);
@@ -68,7 +87,6 @@ fn parse_line_into_map(line: &str) -> Option<ConciseOffsetMap> {
 
 fn get_data() -> (Vec<i64>, Vec<Vec<ConciseOffsetMap>>) {
     let full_text = fs::read_to_string(INPUT_FILE_NAME).unwrap();
-    let first_line = full_text.lines().next().unwrap();
     let seeds: Vec<i64> = full_text.lines().next().unwrap()[7..]
         .split_whitespace()
         .map(|x| x.parse::<i64>().unwrap())
@@ -89,6 +107,8 @@ fn get_data() -> (Vec<i64>, Vec<Vec<ConciseOffsetMap>>) {
             }
         }
     }
+    // the final map hasn't been sorted yet
+    maps[map_type_idx].sort_by(|a, b| a.source_start.cmp(&b.source_start));
     (seeds, maps)
 }
 
@@ -97,26 +117,14 @@ impl ConciseOffsetMap {
         // offset is destination_start - source_start; source_end is source_start + range_length, etc
         let offset = destination_start - source_start;
         let source_end = source_start + range_length as i64;
-        let destination_end = destination_start + range_length as i64;
         ConciseOffsetMap {
             source_start,
-            destination_start,
-            range_length,
             offset,
             source_end,
-            destination_end,
         }
     }
 
-    fn source_in_range(&self, source: i64) -> bool {
-        source >= self.source_start && source < self.source_end
-    }
-
-    fn get_destination(&self, source: i64) -> Option<i64> {
-        if self.source_in_range(source) {
-            Some(source + self.offset)
-        } else {
-            None
-        }
+    fn get_destination(&self, source: i64) -> i64 {
+        source + self.offset
     }
 }
