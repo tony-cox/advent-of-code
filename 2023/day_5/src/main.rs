@@ -29,23 +29,17 @@ fn split_seeds_into_ranges_for_part_2(seeds: &Vec<i64>) -> Vec<i64> {
         .collect()
 }
 fn find_map_for_source(source: i64, maps: &Vec<ConciseOffsetMap>) -> Option<&ConciseOffsetMap> {
-    let found_map_idx_res = maps.binary_search_by(|map| {
+    maps.binary_search_by(|map| {
         if source < map.source_start {
-            // this map is too big, i.e. greater than the source
             std::cmp::Ordering::Greater
         } else if source >= map.source_end {
-            // this map is too small, i.e. less than the source
             std::cmp::Ordering::Less
         } else {
-            // map found
             std::cmp::Ordering::Equal
         }
-    });
-    if let Ok(found_map_idx) = found_map_idx_res {
-        Some(&maps[found_map_idx])
-    } else {
-        None
-    }
+    })
+    .ok()
+    .and_then(|found_map_idx| maps.get(found_map_idx))
 }
 
 fn get_destination_for_source(source: i64, maps: &Vec<ConciseOffsetMap>) -> i64 {
