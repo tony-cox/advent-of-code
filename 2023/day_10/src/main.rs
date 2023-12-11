@@ -5,6 +5,14 @@ use std::time::Instant;
 const INPUT_FILE_NAME: &str = "input.txt";
 
 #[derive(PartialEq, Debug)]
+enum Direction {
+    North,
+    East,
+    South,
+    West,
+}
+
+#[derive(PartialEq, Debug)]
 enum Pipe {
     Horizontal,
     Vertical,
@@ -14,14 +22,6 @@ enum Pipe {
     SouthWestCorner,
     Unknown,
     Ground,
-}
-
-#[derive(PartialEq, Debug)]
-enum Direction {
-    North,
-    East,
-    South,
-    West,
 }
 
 fn main() {
@@ -60,39 +60,57 @@ fn char_to_pipe(c: char) -> Pipe {
 fn part_2(data: &Vec<Vec<Pipe>>, coords_in_loop: &Vec<(usize, usize)>) {
     let mut count: usize = 0;
     // we start on the "outside" for each column
-    let mut inside_columnwise: Vec<bool> = vec![false; data[0].len()];  
     for (northing, row) in data.iter().enumerate() {
-        let mut inside_rowwise: bool = false;  // we start on the "outside" for each row
+        let mut inside: bool = false; // we start on the "outside" for each row
+        let mut previous_switching_pipe: Option<Pipe> = None;
         for (easting, pipe) in row.iter().enumerate() {
             if coords_in_loop.contains(&(northing, easting)) {
                 match pipe {
-                    Pipe::Ground => {
-                        // do nothing, these pipes don't change whether we are in or out
-                    },
                     Pipe::Horizontal => {
-                        // horizontal pipes only shift the columnwise bit for their easting
-                        inside_columnwise[easting] = !inside_columnwise[easting];
-                    },
+                        // horizontal pipes never switch
+                        // inside_columnwise[easting] = !inside_columnwise[easting];
+                    }
                     Pipe::Vertical => {
-                        // vertical pipes only shift the rowwise bit
-                        inside_rowwise = !inside_rowwise;
-                    },
+                        // vertical pipes always switch
+                        inside = !inside;
+                        previous_switching_pipe = Some(Pipe::Vertical)
+                    }
+                    Pipe::NorthWestCorner => {
+                        inside = !inside;
+                        previous_switching_pipe = Some(Pipe::NorthWestCorner);
+                    }
+                    Pipe::NorthEastCorner => {
+                        // northeast is incompatible with southwest
+                        if previous_switching_pipe != Some(Pipe::SouthWestCorner) {
+                            inside = !inside;
+                            previous_switching_pipe = Some(Pipe::NorthEastCorner);
+                        }
+                    }
+                    Pipe::SouthWestCorner => {
+                        inside = !inside;
+                        previous_switching_pipe = Some(Pipe::SouthWestCorner);
+                    }
+                    Pipe::SouthEastCorner => {
+                        // southeast is incompatible with northwest
+                        if previous_switching_pipe != Some(Pipe::NorthWestCorner) {
+                            inside = !inside;
+                            previous_switching_pipe = Some(Pipe::SouthEastCorner);
+                        }
+                    }
                     Pipe::Unknown => {
                         // fill this in depending on what type the "S" is in the data set
-                        // inside_rowwise = !inside_rowwise;
-                        inside_columnwise[easting] = !inside_columnwise[easting];
+                        // current example: northeast
+                        if previous_switching_pipe != Some(Pipe::SouthWestCorner) {
+                            inside = !inside;
+                            previous_switching_pipe = Some(Pipe::NorthEastCorner);
+                        }
                     }
                     _ => {
-                        // all other pipes are corners and affect both the northing
-                        // and the easting bits
-                        // note that "unknown" is also a corner in example data
-                        inside_rowwise = !inside_rowwise;
-                        inside_columnwise[easting] = !inside_columnwise[easting];
+                        panic!("Unexpected pipe type {:?}", pipe);
                     }
-                    
                 }
             } else {
-                if inside_rowwise && inside_columnwise[easting] {
+                if inside {
                     count += 1;
                 }
             }
