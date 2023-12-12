@@ -1,14 +1,13 @@
 extern crate itertools;
 use itertools::Itertools;
 
-use core::num;
 use std::fs;
 
-const INPUT_FILE_NAME: &str = "input.txt";
+const INPUT_FILE_NAME: &str = "example.txt";
 
 fn main() {
     let data = get_data();
-    part_1(&data);
+    // part_1(&data);
     part_2(&data);
 }
 
@@ -112,9 +111,9 @@ fn calculate_number_of_possible_fits(
     // the ? characters could be replaced by # characters in a way that the # characters
     // are grouped in the way specified by the grouping, in the specified order given.  
     // Each grouping needs to be separated by at least one . character.
-    // can we just generate all possible ways to replace the ? characters with # characters such that
+    // here we just generate all possible ways to replace the ? characters with # characters such that
     // the total number of # characters is equal to the sum of the grouping, and then check if the
-    // grouping is satisfied? I think so.
+    // grouping is satisfied.
     let total_number_of_hashes = groupings.iter().sum::<usize>();
     let number_of_hashes_to_place = total_number_of_hashes - condition_record.iter().fold(0, |acc, x| {
         if *x == '#' {
@@ -153,6 +152,36 @@ fn part_1(data: &Vec<(Vec<char>, Vec<usize>)>) {
     println!("Part 1: {}", total_number_of_possible_fits);
 }
 
-fn part_2(data: &Vec<(Vec<char>, Vec<usize>)>) {
-    // TODO: Implement part 2 logic here
+fn expand_data_for_part_2(data: &Vec<(Vec<char>, Vec<usize>)>) -> Vec<(Vec<char>, Vec<usize>)> {
+    // we need to repeat both vectors five times.  In the left vector, we also add a '?' character
+    // in between each repetition
+    let mut expanded_data: Vec<(Vec<char>, Vec<usize>)> = Vec::new();
+    for (condition_record, groupings) in data {
+        let mut expanded_condition_record: Vec<char> = Vec::new();
+        let mut expanded_groupings: Vec<usize> = Vec::new();
+        for i in 0..5 {
+            expanded_condition_record.extend(condition_record.clone());
+            expanded_groupings.extend(groupings.clone());
+            if i < 4 {
+                expanded_condition_record.push('?');
+            }
+        }
+        expanded_data.push((expanded_condition_record, expanded_groupings));
+    }
+    expanded_data
+}
+
+fn part_2(raw_data: &Vec<(Vec<char>, Vec<usize>)>) {
+    // the naive way to do part 2 is exactly the same as part 1, except expand the data first as per the spec
+    let data = expand_data_for_part_2(raw_data);
+    let total_number_of_possible_fits =
+        data.iter().fold(0, |acc, (condition_records, groupings)| {
+            let number_of_possible_fits =
+                calculate_number_of_possible_fits(condition_records, groupings);
+            println!(
+                "Condition record {:?} with groupings {:?} has {} possible fits",
+                condition_records, groupings, number_of_possible_fits);
+            acc + number_of_possible_fits
+        });
+    println!("Part 2: {}", total_number_of_possible_fits);
 }
